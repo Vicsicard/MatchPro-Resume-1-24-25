@@ -96,6 +96,54 @@ export const useSupabaseService = () => {
     }
   }
 
+  const loginWithEmail = async ({ email, password }: { email: string; password: string }) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) throw error
+      return { data, error: null }
+    } catch (error: unknown) {
+      handlerApiError(error)
+      return { data: null, error }
+    }
+  }
+
+  const signUpWithEmail = async ({ 
+    email, 
+    password,
+    first_name,
+    last_name 
+  }: { 
+    email: string
+    password: string
+    first_name?: string
+    last_name?: string
+  }) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name,
+            last_name,
+            name: first_name && last_name ? `${first_name} ${last_name}` : undefined,
+          },
+          emailRedirectTo: `${process.env.NEXT_SITE_URL}auth/callback`
+        }
+      })
+
+      if (error) throw error
+      return { data, error: null }
+    } catch (error: unknown) {
+      handlerApiError(error)
+      return { data: null, error }
+    }
+  }
+
   const logout = async () => {
     try {
       const { error } = await supabase.auth.signOut()
@@ -110,9 +158,10 @@ export const useSupabaseService = () => {
   return {
     fetchPricingPlans,
     fetchUserProfile,
-
     loginWithGithub,
     loginWithLinkedIn,
+    loginWithEmail,
+    signUpWithEmail,
     logout,
   }
 }
