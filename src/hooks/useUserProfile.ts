@@ -19,8 +19,10 @@ export const useUserProfile = () => {
       setLoading(false)
     }
 
-    loadProfile()
-  }, [])
+    if (supabaseService?.fetchUserProfile) {
+      loadProfile()
+    }
+  }, [supabaseService, supabaseService?.fetchUserProfile])
 
   return { profile, loading }
 }

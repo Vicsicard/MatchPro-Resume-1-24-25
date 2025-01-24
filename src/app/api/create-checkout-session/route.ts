@@ -6,13 +6,19 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16',
 })
 
+interface RequestBody {
+  priceId: string;
+  userId: string;
+  userEmail: string;
+}
+
 export async function POST(req: Request) {
   if (!process.env.STRIPE_SECRET_KEY) {
     return NextResponse.json({ error: 'Stripe key not configured' }, { status: 500 })
   }
 
   try {
-    const { priceId, userId, userEmail } = await req.json()
+    const { priceId, userId, userEmail }: RequestBody = await req.json()
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -26,7 +32,7 @@ export async function POST(req: Request) {
     })
 
     return NextResponse.json({ url: session.url })
-  } catch (error: any) {
+  } catch (error: Error) {
     console.error('Stripe error:', error.message)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

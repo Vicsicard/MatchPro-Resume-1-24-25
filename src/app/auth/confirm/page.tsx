@@ -13,33 +13,25 @@ export default function ConfirmPage() {
 
   useEffect(() => {
     const confirmEmail = async () => {
-      const token_hash = searchParams.get('token_hash')
-      const type = searchParams.get('type')
+      try {
+        const token_hash = searchParams.get('token_hash')
+        const type = searchParams.get('type')
+        const next = searchParams.get('next') ?? '/'
 
-      if (token_hash && type) {
-        try {
+        if (token_hash && type) {
           const { error } = await supabase.auth.verifyOtp({
+            type,
             token_hash,
-            type: 'email',
           })
-
-          if (error) {
-            setError(error.message)
-          } else {
-            setSuccess(true)
-            // Redirect to account page after 2 seconds
-            setTimeout(() => {
-              router.push('/account')
-            }, 2000)
-          }
-        } catch (err: any) {
-          setError(err.message)
+          if (error) throw error
+          router.push(next)
         }
+      } catch (error: Error) {
+        setError(error.message)
       }
     }
-
     confirmEmail()
-  }, [router, searchParams, supabase.auth])
+  }, [searchParams, router, supabase.auth])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900">
