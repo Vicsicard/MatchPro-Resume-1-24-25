@@ -2,12 +2,12 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createServerActionClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 export async function login(formData: FormData) {
   try {
-    const supabase = createServerActionClient({ cookies })
+    const supabase = createServerClient({ cookies })
 
     const data = {
       email: formData.get('email') as string,
@@ -36,7 +36,7 @@ export async function login(formData: FormData) {
 
 export async function signup(formData: FormData) {
   try {
-    const supabase = createServerActionClient({ cookies })
+    const supabase = createServerClient({ cookies })
 
     const data = {
       email: formData.get('email') as string,
