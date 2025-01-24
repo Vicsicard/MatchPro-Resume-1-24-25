@@ -6,7 +6,6 @@ import { createClient } from '@supabase/ssr'
 
 export default function ConfirmPage() {
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
@@ -26,8 +25,12 @@ export default function ConfirmPage() {
           if (error) throw error
           router.push(next)
         }
-      } catch (error: Error) {
-        setError(error.message)
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          setError(error.message)
+        } else {
+          setError('An error occurred during email confirmation')
+        }
       }
     }
     confirmEmail()
@@ -45,11 +48,6 @@ export default function ConfirmPage() {
             >
               Back to Login
             </button>
-          </div>
-        ) : success ? (
-          <div className="bg-green-500/10 border border-green-500 text-green-500 rounded-lg p-4 text-center">
-            <p>Email confirmed successfully!</p>
-            <p className="text-sm mt-2">Redirecting to your account...</p>
           </div>
         ) : (
           <div className="flex justify-center">

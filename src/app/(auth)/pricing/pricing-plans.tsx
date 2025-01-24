@@ -1,30 +1,29 @@
 'use client'
 
+import { Stripe, loadStripe } from '@stripe/stripe-js'
 import { useState, useEffect } from 'react'
-import { loadStripe } from '@stripe/stripe-js'
 import toast from 'react-hot-toast'
 
 // Initialize stripe outside component to avoid re-initialization
-let stripePromise: Promise<any> | null = null
-
-interface Product {
-  name: string
-  description: string
-  metadata: {
-    stripe_product_id: string
-  }
-}
+let stripePromise: Promise<Stripe | null> | null = null
 
 interface Price {
-  id: string
-  product_id: string
-  unit_amount: number
-  currency: string
-  interval: string
+  id: string;
+  product_id: string;
+  active: boolean;
+  unit_amount: number;
+  currency: string;
+  interval: string;
   metadata: {
-    stripe_price_id: string
-  }
-  products?: Product
+    stripe_price_id: string;
+  };
+  products: {
+    name: string;
+    description: string;
+    metadata: {
+      stripe_product_id: string;
+    };
+  };
 }
 
 interface PricingPlansProps {
@@ -123,7 +122,7 @@ export default function PricingPlans({ userId, userEmail, prices }: PricingPlans
           key={price.id}
           className="border rounded-lg p-8 shadow-sm hover:shadow-md transition-shadow"
         >
-          <h3 className="text-2xl font-bold mb-4">{price.products?.name}</h3>
+          <h3 className="text-2xl font-bold mb-4">{price.products.name}</h3>
           <div className="mb-4">
             <span className="text-4xl font-bold">
               {new Intl.NumberFormat('en-US', {
@@ -134,7 +133,7 @@ export default function PricingPlans({ userId, userEmail, prices }: PricingPlans
             </span>
             <span className="text-gray-600">/{price.interval}</span>
           </div>
-          <p className="text-gray-600 mb-6">{price.products?.description}</p>
+          <p className="text-gray-600 mb-6">{price.products.description}</p>
           <ul className="mb-8 space-y-2">
             <li className="flex items-center">
               <svg

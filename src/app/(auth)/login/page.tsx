@@ -4,6 +4,10 @@ import { login, signup } from './actions'
 import { useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 
+interface AuthError {
+  message: string;
+}
+
 export default function LoginPage() {
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
@@ -18,10 +22,11 @@ export default function LoginPage() {
 
     try {
       const formData = new FormData(e.currentTarget)
-      await action(formData)
-    } catch (error) {
-      console.error('Authentication error:', error)
-      setFormError('An error occurred during authentication. Please try again.')
+      const { error } = await action(formData)
+      if (error) throw error
+    } catch (error: unknown) {
+      const authError = error as AuthError
+      setFormError(authError.message)
     } finally {
       setIsLoading(false)
     }
@@ -91,7 +96,7 @@ export default function LoginPage() {
             <button
               type="button"
               disabled={isLoading}
-              onClick={(e) => handleSubmit(signup, e as any)}
+              onClick={(e) => handleSubmit(signup, e)}
               className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${
                 isLoading ? 'opacity-75 cursor-not-allowed' : ''
               }`}
