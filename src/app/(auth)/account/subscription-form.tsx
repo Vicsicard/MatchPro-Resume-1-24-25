@@ -3,14 +3,43 @@
 import { useState } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 
+interface User {
+  id: string;
+  email: string;
+}
+
+interface Subscription {
+  id: string;
+  status: string;
+  current_period_end: string;
+  prices: {
+    products: {
+      name: string;
+    };
+    unit_amount: number;
+    interval: string;
+  };
+}
+
+interface SubscriptionError {
+  message: string;
+}
+
+interface SubscriptionFormProps {
+  user: User;
+  subscription?: Subscription;
+}
+
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
-export default function SubscriptionForm({ user, subscription }: any) {
+export default function SubscriptionForm({ user, subscription }: SubscriptionFormProps) {
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubscribe = async (priceId: string) => {
     try {
       setLoading(true)
+      setError(null)
 
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
@@ -23,18 +52,20 @@ export default function SubscriptionForm({ user, subscription }: any) {
         }),
       })
 
-      const { sessionId } = await response.json()
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error)
+
       const stripe = await stripePromise
 
       if (stripe) {
-        const { error } = await stripe.redirectToCheckout({ sessionId })
+        const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId })
         if (error) {
           throw error
         }
       }
-    } catch (error) {
-      console.error('Error:', error)
-      alert('Something went wrong. Please try again.')
+    } catch (error: unknown) {
+      const err = error as SubscriptionError
+      setError(err.message || 'An error occurred. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -43,6 +74,8 @@ export default function SubscriptionForm({ user, subscription }: any) {
   const handleManageSubscription = async () => {
     try {
       setLoading(true)
+      setError(null)
+
       const response = await fetch('/api/create-portal-session', {
         method: 'POST',
         headers: {
@@ -53,11 +86,13 @@ export default function SubscriptionForm({ user, subscription }: any) {
         }),
       })
 
-      const { url } = await response.json()
-      window.location.href = url
-    } catch (error) {
-      console.error('Error:', error)
-      alert('Something went wrong. Please try again.')
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error)
+
+      window.location.href = data.url
+    } catch (error: unknown) {
+      const err = error as SubscriptionError
+      setError(err.message || 'An error occurred. Please try again.')
     } finally {
       setLoading(false)
     }

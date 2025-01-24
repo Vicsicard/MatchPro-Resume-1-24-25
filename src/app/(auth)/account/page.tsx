@@ -31,6 +31,9 @@ export default async function AccountPage() {
 
       <div className="bg-white shadow rounded-lg p-6">
         <h2 className="text-2xl font-semibold mb-4">Subscription Status</h2>
+        <p className="text-sm text-gray-500">
+          Here&apos;s your account details and subscription status.
+        </p>
         {subscription ? (
           <div>
             <p className="text-gray-600 mb-2">
