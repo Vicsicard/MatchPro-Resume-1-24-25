@@ -31,7 +31,7 @@ export default async function AccountPage() {
       <div className="bg-white shadow rounded-lg p-6">
         <h2 className="text-2xl font-semibold mb-4">Subscription Status</h2>
         <p className="text-sm text-gray-500">
-          Here's your account details and subscription status.
+          Here&#39;s your account details and subscription status.
         </p>
         {subscription ? (
           <div>
@@ -52,7 +52,7 @@ export default async function AccountPage() {
           </div>
         ) : (
           <div>
-            <p className="text-gray-600 mb-4">You don't have an active subscription.</p>
+            <p className="text-gray-600 mb-4">You don&#39;t have an active subscription.</p>
             <Link 
               href="/pricing" 
               className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"

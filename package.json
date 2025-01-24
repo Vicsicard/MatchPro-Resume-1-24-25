@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3216",
-    "dev:https": "local-ssl-proxy --source 3217 --target 3216 & next dev -p 3216",
+    "dev": "next dev -p 3000",
+    "dev:https": "local-ssl-proxy --source 3001 --target 3000 & next dev -p 3000",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -30,7 +30,8 @@
     "react-hot-toast": "^2.4.1",
     "stripe": "^17.3.1",
     "tailwind-merge": "^2.5.4",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@tanstack/react-query-devtools": "^5.59.15",

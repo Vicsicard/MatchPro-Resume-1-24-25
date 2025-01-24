@@ -1,4 +1,3 @@
-import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 
@@ -18,7 +17,6 @@ interface RequestBody {
 
 export async function POST(req: Request) {
   try {
-    const headersList = headers()
     const { price, quantity = 1, metadata = {} }: RequestBody = await req.json()
 
     // Create Stripe checkout session

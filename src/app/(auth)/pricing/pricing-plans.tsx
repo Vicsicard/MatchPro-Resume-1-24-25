@@ -2,7 +2,6 @@
 
 import { Stripe, loadStripe } from '@stripe/stripe-js'
 import { useState, useEffect } from 'react'
-import toast from 'react-hot-toast'
 
 // Initialize stripe outside component to avoid re-initialization
 let stripePromise: Promise<Stripe | null> | null = null

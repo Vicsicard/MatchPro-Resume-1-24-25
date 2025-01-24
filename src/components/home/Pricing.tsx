@@ -1,6 +1,6 @@
 'use client'
 
-import type { PricingPlan, Profile } from '@/interfaces'
+import type { PricingPlan } from '@/interfaces'
 import { Icon } from '@/components/ui'
 import { useQuery } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
@@ -19,26 +19,7 @@ interface UserProfile {
   pricing_plans?: PricingPlan
 }
 
-interface Price {
-  id: string
-  product_id: string
-  active: boolean
-  unit_amount: number
-  currency: string
-  interval: string
-  metadata: {
-    stripe_price_id: string
-  }
-  products: {
-    name: string
-    description: string
-    metadata: {
-      stripe_product_id: string
-    }
-  }
-}
-
-const PRICING_QUERY_KEY = ['pricing-plans'] as const
+const PRICING_QUERY_KEY = ['pricing_plans'] as const
 
 const supabase = createClient()
 
@@ -46,7 +27,6 @@ export default function Pricing() {
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
-  const [prices, setPrices] = useState<Price[]>([])
   const [loadingPrices, setLoadingPrices] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [isYearly, setIsYearly] = useState(false)
@@ -75,19 +55,7 @@ export default function Pricing() {
   }, [supabase])
 
   useEffect(() => {
-    const fetchPrices = async () => {
-      try {
-        const response = await fetch('/api/test-prices')
-        const data = await response.json()
-        setPrices(data.prices || [])
-      } catch (error) {
-        console.error('Error fetching prices:', error)
-      } finally {
-        setLoadingPrices(false)
-      }
-    }
-
-    fetchPrices()
+    setLoadingPrices(false)
   }, [])
 
   useEffect(() => {
@@ -103,24 +71,11 @@ export default function Pricing() {
     fetchPricingPlans()
   }, [])
 
-  useEffect(() => {
-    const fetchPricingPlans = async () => {
-      const { data } = await supabase
-        .from('pricing-plans')
-        .select('*')
-      if (data) {
-        setPricingPlans(data as PricingPlan[])
-      }
-    }
-
-    fetchPricingPlans()
-  }, [])
-
   const { data: pricingPlansQuery } = useQuery({
     queryKey: PRICING_QUERY_KEY,
     queryFn: async () => {
       const { data } = await supabase
-        .from('pricing-plans')
+        .from('pricing_plans')
         .select('*')
       return data as PricingPlan[]
     },
