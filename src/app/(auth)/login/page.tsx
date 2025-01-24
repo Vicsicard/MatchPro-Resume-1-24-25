@@ -3,32 +3,10 @@
 import { signIn, signUp } from './actions'
 import { useSearchParams } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { createClientContainer } from '@/utils/supabase/client'
 
 export default function LoginPage() {
   useEffect(() => {
-    const testSupabaseConnection = async () => {
-      const supabase = createClientContainer()
-      console.log('Testing Supabase connection...')
-      
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .limit(1)
-        
-        if (error) {
-          console.error('Supabase connection error:', error)
-          return
-        }
-        
-        console.log('Supabase connection successful! Retrieved data:', data)
-      } catch (error) {
-        console.error('Supabase connection failed:', error)
-      }
-    }
-
-    testSupabaseConnection()
+    // Client-side initialization if needed
   }, [])
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
