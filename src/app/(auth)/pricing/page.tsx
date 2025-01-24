@@ -19,20 +19,20 @@ export default async function PricingPage() {
   // Hardcoded product and price data
   const prices = [
     {
-      id: 'price_1QMemHGEHfPiJwM4TihBXm2n',
-      product_id: 'prod_RF94blp3I2PINl',
+      id: 'price_1Qkq56GEHfPiJwM4oJBkcV5X',
+      product_id: 'prod_Re8Dgz0xm1xbd6',
       active: true,
       unit_amount: 1999,
       currency: 'usd',
       interval: 'month',
       metadata: {
-        stripe_price_id: 'price_1QMemHGEHfPiJwM4TihBXm2n'
+        stripe_price_id: 'price_1Qkq56GEHfPiJwM4oJBkcV5X'
       },
       products: {
-        name: 'Unlimited Resume Optimizer',
-        description: 'AI-powered resume optimization with unlimited usage',
+        name: 'TEST - MatchPro Resume - 30 Day Unlimited Resume Optimizations',
+        description: 'Unlimited access to resume builder',
         metadata: {
-          stripe_product_id: 'prod_RF94blp3I2PINl'
+          stripe_product_id: 'prod_Re8Dgz0xm1xbd6'
         }
       }
     }
