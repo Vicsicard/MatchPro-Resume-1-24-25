@@ -3,27 +3,122 @@
 import type { PricingPlan, Profile } from '@/interfaces'
 import { Icon } from '@/components/ui'
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
-import { useStripeService, useSupabaseService } from '@/services/api'
-import { useUserProfile } from '@/hooks/useUserProfile'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { isEmpty } from 'lodash'
+import { createClient } from '@/utils/supabase'
+import { loadStripe } from '@stripe/stripe-js'
+
+interface UserProfile {
+  id: string
+  user_id: string
+  full_name: string
+  email: string
+  avatar_url: string
+  is_subscribed: boolean
+  updated_at: string
+  pricing_plans?: PricingPlan
+}
+
+interface Price {
+  id: string
+  product_id: string
+  active: boolean
+  unit_amount: number
+  currency: string
+  interval: string
+  metadata: {
+    stripe_price_id: string
+  }
+  products: {
+    name: string
+    description: string
+    metadata: {
+      stripe_product_id: string
+    }
+  }
+}
 
 const PRICING_QUERY_KEY = ['pricing-plans'] as const
 
-export function Pricing() {
+const supabase = createClient()
+
+export default function Pricing() {
   const router = useRouter()
-  const supabaseService = useSupabaseService()
-  const stripeService = useStripeService()
-  const { profile } = useUserProfile()
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [prices, setPrices] = useState<Price[]>([])
+  const [loadingPrices, setLoadingPrices] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [isYearly, setIsYearly] = useState(false)
+  const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([])
 
-  const { data: pricingPlans = [] } = useQuery({
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
+          setProfile(data)
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProfile()
+  }, [supabase])
+
+  useEffect(() => {
+    const fetchPrices = async () => {
+      try {
+        const response = await fetch('/api/test-prices')
+        const data = await response.json()
+        setPrices(data.prices || [])
+      } catch (error) {
+        console.error('Error fetching prices:', error)
+      } finally {
+        setLoadingPrices(false)
+      }
+    }
+
+    fetchPrices()
+  }, [])
+
+  useEffect(() => {
+    const fetchPricingPlans = async () => {
+      const { data } = await supabase
+        .from('pricing_plans')
+        .select('*')
+      if (data) {
+        setPricingPlans(data as PricingPlan[])
+      }
+    }
+
+    fetchPricingPlans()
+  }, [supabase])
+
+  const { data: pricingPlansQuery } = useQuery({
     queryKey: PRICING_QUERY_KEY,
-    queryFn: () => supabaseService.fetchPricingPlans({}),
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('pricing-plans')
+        .select('*')
+      return data as PricingPlan[]
+    },
     staleTime: 1000 * 60 * 60, // Consider data fresh for 1 hour since it is not an always changing data
   })
+
+  useEffect(() => {
+    if (pricingPlansQuery) {
+      setPricingPlans(pricingPlansQuery)
+    }
+  }, [pricingPlansQuery])
 
   const subscribe = async (slug: string) => {
     setIsLoading(true)
@@ -32,9 +127,24 @@ export function Pricing() {
 
     const lookup_key = `${slug}_${isYearly ? 'yearly' : 'monthly'}`
 
-    const res = await stripeService.checkout({ lookup_key })
-    if (profile) profile.pricing_plans = res.pricing_plans
-    if (res?.url) window.location.href = res.url
+    const res = await fetch('/api/create-checkout-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        price: { id: lookup_key },
+        metadata: {
+          userId: profile.id,
+        },
+      }),
+    })
+
+    const { sessionId } = await res.json()
+    const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+    if (stripe) {
+      await stripe.redirectToCheckout({ sessionId })
+    }
 
     setIsLoading(false)
   }
@@ -157,6 +267,71 @@ export function Pricing() {
     )
   }
 
+  const PricingButton = ({
+    isLoading,
+    plan,
+    profile,
+    onSubscribe,
+  }: Readonly<{
+    isLoading: boolean
+    plan: PricingPlan
+    profile: UserProfile | null
+    onSubscribe: (slug: string) => void
+  }>) => {
+    const isCurrentPlan = profile?.pricing_plans?.id === plan.id
+    const isUpgrade = profile?.pricing_plans ? profile?.pricing_plans?.price_monthly < plan.price_monthly : false
+
+    const getButtonLabel = () => {
+      if (isCurrentPlan) return 'Manage Subscription'
+      if (isUpgrade) return '⬆️ Upgrade Plan'
+      if (profile?.pricing_plans) return '⬇️ Downgrade Plan'
+
+      return plan.cta
+    }
+
+    const subscribe = () => {
+      if (profile?.pricing_plans) {
+        // navigateToStripeDashboard()
+      } else {
+        onSubscribe(plan.slug)
+      }
+    }
+
+    const getCustomClasses = () => {
+      if (plan.most_popular) return 'bg-primary-600 hover:bg-primary-700'
+
+      return 'bg-secondary-600 hover:bg-secondary-700'
+    }
+
+    return (
+      <>
+        {isLoading && (
+          <button className='bg-gray-300 text-secondary-500 rounded w-full h-10 animate-pulse cursor-not-allowed'>
+            Please wait...
+          </button>
+        )}
+
+        {!isLoading && (
+          <button
+            disabled={isLoading}
+            onClick={() => subscribe()}
+            className={`block w-full text-center py-2 px-4 rounded text-white ${getCustomClasses()}`}
+          >
+            {getButtonLabel()}
+          </button>
+        )}
+      </>
+    )
+  }
+
+  if (loading || loadingPrices) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    )
+  }
+
   return (
     <section className='bg-white py-12'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
@@ -168,9 +343,9 @@ export function Pricing() {
           <p className='mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto'>Choose the plan that fits your needs.</p>
         </div>
 
-        {isEmpty(pricingPlans) && <PricingTableSkeleton />}
+        {pricingPlans.length === 0 && <PricingTableSkeleton />}
 
-        {!isEmpty(pricingPlans) && (
+        {pricingPlans.length > 0 && (
           <>
             <div className='relative w-full h-full flex justify-center items-center'>
               <div className='flex items-center justify-center space-x-6 mt-5 h-7'>
@@ -217,63 +392,5 @@ export function Pricing() {
         )}
       </div>
     </section>
-  )
-}
-
-const PricingButton = ({
-  isLoading,
-  plan,
-  profile,
-  onSubscribe,
-}: Readonly<{
-  isLoading: boolean
-  plan: PricingPlan
-  profile: Profile | null
-  onSubscribe: (slug: string) => void
-}>) => {
-  const isCurrentPlan = profile?.pricing_plans?.id === plan.id
-  const isUpgrade = profile?.pricing_plans ? profile?.pricing_plans?.price_monthly < plan.price_monthly : false
-  const stripeService = useStripeService()
-
-  const getButtonLabel = () => {
-    if (isCurrentPlan) return 'Manage Subscription'
-    if (isUpgrade) return '⬆️ Upgrade Plan'
-    if (profile?.pricing_plans) return '⬇️ Downgrade Plan'
-
-    return plan.cta
-  }
-
-  const subscribe = () => {
-    if (profile?.pricing_plans) {
-      stripeService.navigateToStripeDashboard()
-    } else {
-      onSubscribe(plan.slug)
-    }
-  }
-
-  const getCustomClasses = () => {
-    if (plan.most_popular) return 'bg-primary-600 hover:bg-primary-700'
-
-    return 'bg-secondary-600 hover:bg-secondary-700'
-  }
-
-  return (
-    <>
-      {isLoading && (
-        <button className='bg-gray-300 text-secondary-500 rounded w-full h-10 animate-pulse cursor-not-allowed'>
-          Please wait...
-        </button>
-      )}
-
-      {!isLoading && (
-        <button
-          disabled={isLoading}
-          onClick={() => subscribe()}
-          className={`block w-full text-center py-2 px-4 rounded text-white ${getCustomClasses()}`}
-        >
-          {getButtonLabel()}
-        </button>
-      )}
-    </>
   )
 }

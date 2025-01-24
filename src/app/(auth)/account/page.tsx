@@ -1,12 +1,11 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { createClient } from '@/utils/supabase'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AccountPage() {
-  const supabase = createServerClient({ cookies })
+  const supabase = createClient()
   const { data: { session } } = await supabase.auth.getSession()
 
   if (!session) {
@@ -32,7 +31,7 @@ export default async function AccountPage() {
       <div className="bg-white shadow rounded-lg p-6">
         <h2 className="text-2xl font-semibold mb-4">Subscription Status</h2>
         <p className="text-sm text-gray-500">
-          Here&apos;s your account details and subscription status.
+          Here's your account details and subscription status.
         </p>
         {subscription ? (
           <div>

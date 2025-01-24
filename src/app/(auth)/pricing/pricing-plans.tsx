@@ -27,29 +27,24 @@ interface Price {
 }
 
 interface PricingPlansProps {
-  userId: string
-  userEmail: string
   prices: Price[]
 }
 
-export default function PricingPlans({ userId, userEmail, prices }: PricingPlansProps) {
-  const [loading, setLoading] = useState<string | null>(null)
+export default function PricingPlans({ prices }: PricingPlansProps) {
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [stripeError, setStripeError] = useState<boolean>(false)
 
   useEffect(() => {
     // Initialize Stripe in useEffect to avoid SSR issues
     if (!stripePromise && process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
       stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
-    } else if (!stripePromise) {
-      setStripeError(true)
-    }
+    } 
   }, [])
 
   const handleSubscribe = async (priceId: string) => {
     try {
       setLoading(true)
-      console.log('Creating checkout session for price:', priceId)
+      setError(null)
 
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
@@ -57,45 +52,20 @@ export default function PricingPlans({ userId, userEmail, prices }: PricingPlans
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          priceId, // Use the priceId parameter instead of hardcoded value
-          userId,
-          userEmail,
+          priceId,
         }),
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create checkout session')
-      }
-
       const data = await response.json()
-      console.log('Checkout session created:', data)
+      if (!response.ok) throw new Error(data.error)
 
-      if (!data.url) {
-        throw new Error('No checkout URL returned')
-      }
-
-      // Redirect to Stripe Checkout
       window.location.href = data.url
-    } catch (error) {
-      console.error('Error creating checkout session:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to start checkout')
+    } catch (error: unknown) {
+      const err = error as Error
+      setError(err.message || 'An error occurred. Please try again.')
     } finally {
       setLoading(false)
     }
-  }
-
-  if (stripeError) {
-    return (
-      <div className="text-center p-4">
-        <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative mb-4">
-          <strong className="font-bold">Notice: </strong>
-          <span className="block sm:inline">
-            Payment system is currently unavailable. Please contact support.
-          </span>
-        </div>
-      </div>
-    )
   }
 
   if (error) {
@@ -189,9 +159,9 @@ export default function PricingPlans({ userId, userEmail, prices }: PricingPlans
             disabled={!!loading}
             className={`w-full py-2 px-4 rounded-md bg-blue-600 text-white font-semibold
               hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-              ${loading === price.id ? 'opacity-75 cursor-not-allowed' : ''}`}
+              ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
           >
-            {loading === price.id ? 'Processing...' : 'Subscribe'}
+            {loading ? 'Processing...' : 'Subscribe'}
           </button>
         </div>
       ))}

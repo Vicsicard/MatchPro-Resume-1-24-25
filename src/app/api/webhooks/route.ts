@@ -1,94 +1,92 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { createClient } from '@/utils/supabase'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
+  apiVersion: '2024-10-28.acacia',
+  typescript: true,
 })
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
+const relevantEvents = new Set([
+  'checkout.session.completed',
+  'customer.subscription.updated',
+  'customer.subscription.deleted'
+])
 
 export async function POST(req: Request) {
+  const body = await req.text()
+  const sig = headers().get('stripe-signature')
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+
+  let event: Stripe.Event
+
   try {
-    const body = await req.text()
-    const signature = req.headers.get('stripe-signature')!
-
-    let event: Stripe.Event
-
-    try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
-    } catch (err) {
-      console.error('Webhook signature verification failed.', err)
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+    if (!sig || !webhookSecret) {
+      console.error('Missing stripe signature or webhook secret')
+      return NextResponse.json(
+        { error: 'Missing stripe signature or webhook secret' },
+        { status: 400 }
+      )
     }
 
-    const supabase = createServerClient({ cookies })
-
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session
-        const userId = session.client_reference_id
-        const customerId = session.customer as string
-        const subscriptionId = session.subscription as string
-
-        // Update user's subscription status in Supabase
-        if (userId) {
-          const { error } = await supabase
-            .from('subscriptions')
-            .upsert({
-              user_id: userId,
-              stripe_customer_id: customerId,
-              stripe_subscription_id: subscriptionId,
-              status: 'active',
-              price_id: session.line_items?.data[0]?.price?.id || null,
-              current_period_end: null // We'll update this when we receive the subscription event
-            })
-
-          if (error) {
-            console.error('Error updating subscription:', error)
-          }
-        }
-        break
-      }
-
-      case 'customer.subscription.updated':
-      case 'customer.subscription.deleted': {
-        const subscription = event.data.object as Stripe.Subscription
-        const status = subscription.status
-        const customerId = subscription.customer as string
-
-        // Get user from Supabase using stripe_customer_id
-        const { data: subscriptionData } = await supabase
-          .from('subscriptions')
-          .select('user_id')
-          .eq('stripe_customer_id', customerId)
-          .single()
-
-        if (subscriptionData) {
-          const { error } = await supabase
-            .from('subscriptions')
-            .update({
-              status,
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-              price_id: subscription.items.data[0].price.id
-            })
-            .eq('stripe_customer_id', customerId)
-
-          if (error) {
-            console.error('Error updating subscription:', error)
-          }
-        }
-        break
-      }
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      console.error(`❌ Error message: ${err.message}`)
+      return NextResponse.json({ error: err.message }, { status: 400 })
     }
-
-    return NextResponse.json({ received: true })
-  } catch (error) {
-    console.error('Webhook error:', error)
     return NextResponse.json(
-      { error: 'Webhook handler failed' },
-      { status: 500 }
+      { error: 'Unknown error occurred' },
+      { status: 400 }
     )
   }
+
+  if (relevantEvents.has(event.type)) {
+    try {
+      const supabase = createClient()
+
+      switch (event.type) {
+        case 'checkout.session.completed': {
+          const checkoutSession = event.data.object as Stripe.Checkout.Session
+          
+          if (checkoutSession.subscription) {
+            await supabase
+              .from('subscriptions')
+              .insert([
+                {
+                  user_id: checkoutSession.metadata?.userId,
+                  stripe_subscription_id: checkoutSession.subscription,
+                  stripe_customer_id: checkoutSession.customer,
+                  stripe_price_id: checkoutSession.metadata?.priceId,
+                  status: 'active'
+                }
+              ])
+          }
+          break
+        }
+
+        case 'customer.subscription.updated':
+        case 'customer.subscription.deleted': {
+          const subscription = event.data.object as Stripe.Subscription
+          await supabase
+            .from('subscriptions')
+            .update({ status: subscription.status })
+            .eq('stripe_subscription_id', subscription.id)
+          break
+        }
+
+        default:
+          throw new Error(`Unhandled relevant event: ${event.type}`)
+      }
+    } catch (error) {
+      console.error(error)
+      return NextResponse.json(
+        { error: 'Webhook handler failed' },
+        { status: 500 }
+      )
+    }
+  }
+
+  return NextResponse.json({ received: true })
 }

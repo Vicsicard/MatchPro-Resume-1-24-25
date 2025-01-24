@@ -1,6 +1,6 @@
 'use client'
 
-import { login, signup } from './actions'
+import { signIn, signUp } from './actions'
 import { useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 
@@ -13,20 +13,24 @@ export default function LoginPage() {
   const error = searchParams.get('error')
   const message = searchParams.get('message')
   const [isLoading, setIsLoading] = useState(false)
-  const [formError, setFormError] = useState('')
+  const [formError, setFormError] = useState<string | null>(null)
 
-  const handleSubmit = async (action: typeof login | typeof signup, e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const handleSubmit = async (action: typeof signIn | typeof signUp) => {
     setIsLoading(true)
-    setFormError('')
+    setFormError(null)
 
     try {
-      const formData = new FormData(e.currentTarget)
-      const { error } = await action(formData)
-      if (error) throw error
-    } catch (error: unknown) {
-      const authError = error as AuthError
-      setFormError(authError.message)
+      const formData = new FormData()
+      const emailInput = document.querySelector<HTMLInputElement>('input[name="email"]')
+      const passwordInput = document.querySelector<HTMLInputElement>('input[name="password"]')
+      
+      if (emailInput && passwordInput) {
+        formData.append('email', emailInput.value)
+        formData.append('password', passwordInput.value)
+        await action(formData)
+      }
+    } catch (error) {
+      setFormError('An error occurred during authentication')
     } finally {
       setIsLoading(false)
     }
@@ -54,7 +58,7 @@ export default function LoginPage() {
           <h2 className="text-3xl font-bold text-white">Welcome back</h2>
           <p className="mt-2 text-sm text-gray-400">Sign in to your account or create a new one</p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={(e) => handleSubmit(login, e)}>
+        <form className="mt-8 space-y-6">
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-300">
@@ -85,23 +89,20 @@ export default function LoginPage() {
 
           <div className="flex space-x-4">
             <button
-              type="submit"
+              type="button"
               disabled={isLoading}
-              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                isLoading ? 'opacity-75 cursor-not-allowed' : ''
-              }`}
+              onClick={() => handleSubmit(signIn)}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              {isLoading ? 'Loading...' : 'Log in'}
+              Sign in
             </button>
             <button
               type="button"
               disabled={isLoading}
-              onClick={(e) => handleSubmit(signup, e)}
-              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ${
-                isLoading ? 'opacity-75 cursor-not-allowed' : ''
-              }`}
+              onClick={() => handleSubmit(signUp)}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
             >
-              {isLoading ? 'Loading...' : 'Sign up'}
+              Sign up
             </button>
           </div>
         </form>

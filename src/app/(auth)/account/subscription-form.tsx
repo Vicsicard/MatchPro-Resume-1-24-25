@@ -64,8 +64,7 @@ export default function SubscriptionForm({ user, subscription }: SubscriptionFor
         }
       }
     } catch (error: unknown) {
-      const err = error as SubscriptionError
-      setError(err.message || 'An error occurred. Please try again.')
+      setError((error as SubscriptionError).message || 'An error occurred. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -91,58 +90,62 @@ export default function SubscriptionForm({ user, subscription }: SubscriptionFor
 
       window.location.href = data.url
     } catch (error: unknown) {
-      const err = error as SubscriptionError
-      setError(err.message || 'An error occurred. Please try again.')
+      setError((error as SubscriptionError).message || 'An error occurred. Please try again.')
     } finally {
       setLoading(false)
     }
   }
 
-  if (subscription) {
-    return (
-      <div className="bg-gray-700 rounded-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-medium text-white">
-              {subscription.prices?.products?.name}
-            </h3>
-            <p className="text-gray-300">
-              {new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-              }).format(subscription.prices?.unit_amount / 100)}{' '}
-              / {subscription.prices?.interval}
-            </p>
-          </div>
-          <button
-            onClick={handleManageSubscription}
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50"
-          >
-            {loading ? 'Loading...' : 'Manage Subscription'}
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="bg-gray-700 rounded-lg p-6">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-medium text-white">Pro Plan</h3>
-            <p className="text-gray-300">$9.99 / month</p>
-          </div>
-          <button
-            onClick={() => handleSubscribe('price_H5ggYwtDq4fbrJ')}
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50"
-          >
-            {loading ? 'Loading...' : 'Subscribe'}
-          </button>
+    <div className="space-y-4">
+      {error && (
+        <div className="bg-red-50 border border-red-500 text-red-700 p-4 rounded-md">
+          {error}
         </div>
-      </div>
+      )}
+      {subscription ? (
+        <div className="bg-gray-700 rounded-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-medium text-white">
+                {subscription.prices?.products?.name}
+              </h3>
+              <p className="text-gray-300">
+                {new Intl.NumberFormat('en-US', {
+                  style: 'currency',
+                  currency: 'USD',
+                }).format(subscription.prices?.unit_amount / 100)}{' '}
+                / {subscription.prices?.interval}
+              </p>
+            </div>
+            <button
+              onClick={handleManageSubscription}
+              disabled={loading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50"
+            >
+              {loading ? 'Loading...' : 'Manage Subscription'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-gray-700 rounded-lg p-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-medium text-white">Pro Plan</h3>
+                <p className="text-gray-300">$9.99 / month</p>
+              </div>
+              <button
+                onClick={() => handleSubscribe('price_H5ggYwtDq4fbrJ')}
+                disabled={loading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50"
+              >
+                {loading ? 'Loading...' : 'Subscribe'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
