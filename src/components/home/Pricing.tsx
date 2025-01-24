@@ -101,7 +101,20 @@ export default function Pricing() {
     }
 
     fetchPricingPlans()
-  }, [supabase])
+  }, [])
+
+  useEffect(() => {
+    const fetchPricingPlans = async () => {
+      const { data } = await supabase
+        .from('pricing-plans')
+        .select('*')
+      if (data) {
+        setPricingPlans(data as PricingPlan[])
+      }
+    }
+
+    fetchPricingPlans()
+  }, [])
 
   const { data: pricingPlansQuery } = useQuery({
     queryKey: PRICING_QUERY_KEY,
