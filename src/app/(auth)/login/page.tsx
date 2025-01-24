@@ -2,13 +2,34 @@
 
 import { signIn, signUp } from './actions'
 import { useSearchParams } from 'next/navigation'
-import { useState } from 'react'
-
-interface AuthError {
-  message: string;
-}
+import { useState, useEffect } from 'react'
+import { createClientContainer } from '@/utils/supabase/client'
 
 export default function LoginPage() {
+  useEffect(() => {
+    const testSupabaseConnection = async () => {
+      const supabase = createClientContainer()
+      console.log('Testing Supabase connection...')
+      
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .limit(1)
+        
+        if (error) {
+          console.error('Supabase connection error:', error)
+          return
+        }
+        
+        console.log('Supabase connection successful! Retrieved data:', data)
+      } catch (error) {
+        console.error('Supabase connection failed:', error)
+      }
+    }
+
+    testSupabaseConnection()
+  }, [])
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
   const message = searchParams.get('message')
@@ -19,18 +40,23 @@ export default function LoginPage() {
     setIsLoading(true)
     setFormError(null)
 
+    const form = document.querySelector('form')
+    if (!form) {
+      setFormError('Form not found')
+      setIsLoading(false)
+      return
+    }
+
+    const formData = new FormData(form)
     try {
-      const formData = new FormData()
-      const emailInput = document.querySelector<HTMLInputElement>('input[name="email"]')
-      const passwordInput = document.querySelector<HTMLInputElement>('input[name="password"]')
-      
-      if (emailInput && passwordInput) {
-        formData.append('email', emailInput.value)
-        formData.append('password', passwordInput.value)
-        await action(formData)
-      }
-    } catch (error) {
-      setFormError('An error occurred during authentication')
+      await action(formData)
+    } catch (error: unknown) {
+      console.error('Authentication error:', error)
+      setFormError(
+        error instanceof Error 
+          ? error.message 
+          : 'An unexpected error occurred during authentication'
+      )
     } finally {
       setIsLoading(false)
     }
