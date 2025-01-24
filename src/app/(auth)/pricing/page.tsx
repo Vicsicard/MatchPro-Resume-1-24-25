@@ -1,4 +1,4 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import PricingPlans from './pricing-plans'
@@ -6,7 +6,7 @@ import PricingPlans from './pricing-plans'
 export const dynamic = 'force-dynamic'
 
 export default async function PricingPage() {
-  const supabase = createServerComponentClient({ cookies })
+  const supabase = createServerClient({ cookies })
 
   const {
     data: { session },
