@@ -71,7 +71,7 @@ export async function signIn(formData: FormData) {
   const { success } = await ratelimit.limit(email)
   if (!success) {
     console.warn(`Rate limit exceeded for email: ${email}`)
-    return JSON.stringify({ success: false, error: 'Too many attempts. Please try again later.' })
+    return { success: false, error: 'Too many attempts. Please try again later.', status: 429 }
   }
 
   const supabase = createClient()
@@ -106,18 +106,19 @@ export async function signIn(formData: FormData) {
         }
       }
 
-      return JSON.stringify({ 
+      return { 
         success: false, 
         error: errorMessage,
-        details: error 
-      })
+        details: error,
+        status: error.status || 400
+      }
     }
 
     console.log('Successful sign in:', { email, userId: data.user?.id })
-    return JSON.stringify({ success: true, redirect: '/account' })
+    return { success: true, redirect: '/account' }
   } catch (error) {
     console.error('Unexpected sign in error:', error)
-    return JSON.stringify({ success: false, error: 'An unexpected error occurred. Please try again.' })
+    return { success: false, error: 'An unexpected error occurred. Please try again.', status: 500 }
   }
 }
 
@@ -129,7 +130,7 @@ export async function signUp(formData: FormData) {
   const { success } = await ratelimit.limit(email)
   if (!success) {
     console.warn(`Rate limit exceeded for email: ${email}`)
-    return JSON.stringify({ success: false, error: 'Too many attempts. Please try again later.' })
+    return { success: false, error: 'Too many attempts. Please try again later.', status: 429 }
   }
 
   const supabase = createClient()
@@ -173,17 +174,18 @@ export async function signUp(formData: FormData) {
         errorMessage = 'Invalid password format'
       }
 
-      return JSON.stringify({ 
+      return { 
         success: false, 
         error: errorMessage,
-        details: error 
-      })
+        details: error,
+        status: error.status || 400
+      }
     }
 
     console.log('Successful sign up:', { email, userId: data.user?.id })
-    return JSON.stringify({ success: true, redirect: '/login?message=Check your email to continue the sign in process' })
+    return { success: true, redirect: '/login?message=Check your email to continue the sign in process' }
   } catch (error) {
     console.error('Unexpected sign up error:', error)
-    return JSON.stringify({ success: false, error: 'An unexpected error occurred. Please try again.' })
+    return { success: false, error: 'An unexpected error occurred. Please try again.', status: 500 }
   }
 }
