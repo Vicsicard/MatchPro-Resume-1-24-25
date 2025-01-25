@@ -52,7 +52,7 @@ export default function Pricing() {
     }
 
     fetchProfile()
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     setLoadingPrices(false)
