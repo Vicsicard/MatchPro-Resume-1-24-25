@@ -8,29 +8,51 @@ export function LoginForm() {
   const [formError, setFormError] = useState<string | null>(null)
 
   const handleSubmit = async (action: typeof signIn | typeof signUp, event: React.MouseEvent) => {
-    event.preventDefault()
-    setIsLoading(true)
-    setFormError(null)
-
-    const form = event.currentTarget.closest('form')
-    if (!form) {
-      setFormError('Form not found')
-      setIsLoading(false)
-      return
-    }
-
-    const formData = new FormData(form)
+    console.group('LoginForm Submission')
     try {
-      await action(formData)
+      event.preventDefault()
+      console.debug('Event prevented default behavior')
+      
+      setIsLoading(true)
+      setFormError(null)
+      console.debug('Loading state set to true')
+
+      const form = event.currentTarget.closest('form')
+      if (!form) {
+        const errorMsg = 'Form not found'
+        console.error(errorMsg)
+        setFormError(errorMsg)
+        setIsLoading(false)
+        return
+      }
+
+      const formData = new FormData(form)
+      console.debug('Form data collected:', Object.fromEntries(formData.entries()))
+
+      console.log(`Starting ${action.name} action...`)
+      const result = await action(formData)
+      console.log('Action completed successfully:', result)
+      
     } catch (error: unknown) {
-      console.error('Authentication error:', error)
-      setFormError(
-        error instanceof Error 
-          ? error.message 
-          : 'An unexpected error occurred during authentication'
-      )
+      console.groupCollapsed('Error Details')
+      if (error instanceof Error) {
+        console.error('Error name:', error.name)
+        console.error('Error message:', error.message)
+        console.error('Stack trace:', error.stack)
+        setFormError(error.message)
+      } else if (typeof error === 'string') {
+        console.error('Error string:', error)
+        setFormError(error)
+      } else {
+        const errorMsg = 'An unexpected error occurred during authentication'
+        console.error('Unknown error type:', error)
+        setFormError(errorMsg)
+      }
+      console.groupEnd()
     } finally {
       setIsLoading(false)
+      console.debug('Loading state reset to false')
+      console.groupEnd()
     }
   }
 
