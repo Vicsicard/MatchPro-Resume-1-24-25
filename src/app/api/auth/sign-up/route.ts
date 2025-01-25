@@ -16,7 +16,10 @@ export async function POST(request: Request) {
   try {
     const { data, error } = await supabase.auth.signUp({
       email,
-      password
+      password,
+      options: {
+        emailRedirectTo: `${process.env.NEXT_SITE_URL}/auth/confirm`
+      }
     })
 
     if (error) throw error
