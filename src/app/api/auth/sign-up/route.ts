@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     )
   }
 
-  const supabase = createClient()
+  const supabase = createClient(true) // Use service role for sign-up
   
   try {
     // Validate environment variables
