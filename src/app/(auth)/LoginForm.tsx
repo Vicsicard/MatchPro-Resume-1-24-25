@@ -7,11 +7,12 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
-  const handleSubmit = async (action: typeof signIn | typeof signUp) => {
+  const handleSubmit = async (action: typeof signIn | typeof signUp, event: React.MouseEvent) => {
+    event.preventDefault()
     setIsLoading(true)
     setFormError(null)
 
-    const form = document.querySelector('form')
+    const form = event.currentTarget.closest('form')
     if (!form) {
       setFormError('Form not found')
       setIsLoading(false)
@@ -58,6 +59,7 @@ export function LoginForm() {
             type="password"
             required
             minLength={6}
+            autoComplete="current-password"
             className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
@@ -73,7 +75,7 @@ export function LoginForm() {
         <button
           type="button"
           disabled={isLoading}
-          onClick={() => handleSubmit(signIn)}
+          onClick={(e) => handleSubmit(signIn, e)}
           className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           Sign in
@@ -81,7 +83,7 @@ export function LoginForm() {
         <button
           type="button"
           disabled={isLoading}
-          onClick={() => handleSubmit(signUp)}
+          onClick={(e) => handleSubmit(signUp, e)}
           className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
         >
           Sign up
