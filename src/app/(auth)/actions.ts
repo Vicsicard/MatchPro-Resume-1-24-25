@@ -121,11 +121,22 @@ export async function signUp(formData: FormData) {
   const supabase = createClient()
 
   try {
+    // Debug log environment variables
+    console.log('Sign up environment:', {
+      NEXT_SITE_URL: process.env.NEXT_SITE_URL,
+      NODE_ENV: process.env.NODE_ENV
+    })
+
+    const redirectUrl = `${process.env.NEXT_SITE_URL}/auth/callback`
+    if (!redirectUrl.startsWith('http')) {
+      throw new Error(`Invalid redirect URL: ${redirectUrl}`)
+    }
+
     const { error, data } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${process.env.NEXT_SITE_URL}/auth/callback`
+        emailRedirectTo: redirectUrl
       }
     })
 
@@ -133,7 +144,8 @@ export async function signUp(formData: FormData) {
       console.error('Sign up error:', {
         email,
         error: error.message,
-        status: error.status
+        status: error.status,
+        details: error
       })
       
       let errorMessage = 'Could not create user'
@@ -141,9 +153,17 @@ export async function signUp(formData: FormData) {
         errorMessage = 'Email already registered. Please sign in instead.'
       } else if (error.message.includes('Password should be at least')) {
         errorMessage = 'Password must be at least 6 characters'
+      } else if (error.message.includes('email must be a valid email')) {
+        errorMessage = 'Please enter a valid email address'
+      } else if (error.message.includes('password')) {
+        errorMessage = 'Invalid password format'
       }
 
-      return JSON.stringify({ success: false, error: errorMessage })
+      return JSON.stringify({ 
+        success: false, 
+        error: errorMessage,
+        details: error 
+      })
     }
 
     console.log('Successful sign up:', { email, userId: data.user?.id })

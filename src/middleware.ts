@@ -41,12 +41,6 @@ export async function middleware(request: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // Force HTTPS in development
-  if (process.env.NODE_ENV === 'development' && !request.url.startsWith('https://')) {
-    const httpsUrl = request.url.replace('http://', 'https://')
-    return NextResponse.redirect(httpsUrl)
-  }
-
   // If user is signed in and the current path is /login or /signup, redirect to /account
   if (session && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup')) {
     return NextResponse.redirect(new URL('/account', request.url))
