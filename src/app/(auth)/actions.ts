@@ -93,10 +93,24 @@ export async function signIn(formData: FormData) {
       if (error.message.includes('Invalid login credentials')) {
         errorMessage = 'Invalid email or password'
       } else if (error.message.includes('Email not confirmed')) {
-        errorMessage = 'Please confirm your email before signing in'
+        // If email isn't confirmed, offer to resend confirmation
+        const { error: resendError } = await supabase.auth.resend({
+          type: 'signup',
+          email
+        })
+        
+        if (resendError) {
+          errorMessage = 'Please confirm your email before signing in. Failed to resend confirmation email.'
+        } else {
+          errorMessage = 'Please confirm your email before signing in. A new confirmation email has been sent.'
+        }
       }
 
-      return JSON.stringify({ success: false, error: errorMessage })
+      return JSON.stringify({ 
+        success: false, 
+        error: errorMessage,
+        details: error 
+      })
     }
 
     console.log('Successful sign in:', { email, userId: data.user?.id })

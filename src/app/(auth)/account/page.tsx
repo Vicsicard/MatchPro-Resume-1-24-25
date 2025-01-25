@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/utils/supabase'
+import { createClient } from '@/utils/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
