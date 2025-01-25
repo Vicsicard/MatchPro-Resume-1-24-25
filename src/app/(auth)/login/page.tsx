@@ -1,3 +1,4 @@
+import { signIn, signUp } from './actions'
 import { LoginForm } from '../LoginForm'
 
 export const dynamic = 'force-dynamic'
@@ -24,7 +25,7 @@ export default function LoginPage({
           <h2 className="text-3xl font-bold text-white">Welcome back</h2>
           <p className="mt-2 text-sm text-gray-400">Sign in to your account or create a new one</p>
         </div>
-        <LoginForm />
+        <LoginForm signIn={signIn} signUp={signUp} />
       </div>
     </div>
   )

@@ -1,10 +1,14 @@
 'use client'
 
-import { signIn, signUp } from './actions'
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
-export function LoginForm() {
+interface LoginFormProps {
+  signIn: (formData: FormData) => Promise<void>
+  signUp: (formData: FormData) => Promise<void>
+}
+
+export function LoginForm({ signIn, signUp }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const lastRequestTime = useRef<number>(0)
@@ -53,26 +57,11 @@ export function LoginForm() {
       console.debug('Form data collected:', Object.fromEntries(formData.entries()))
 
       console.log(`Starting ${action.name} action...`)
-      const result = await action(formData) as { 
-        success?: boolean; 
-        redirect?: string; 
-        error?: string;
-        status?: number;
-      }
-      console.log('Action completed successfully:', result)
+      await action(formData)
       
-      if (result?.success && result.redirect) {
-        router.push(result.redirect)
-      } else if (result?.error) {
-        // Handle specific error cases
-        if (result.status === 429) {
-          setFormError('Too many requests. Please wait a moment and try again.')
-        } else if (result.status === 500) {
-          setFormError('Server error. Please try again later.')
-        } else {
-          setFormError(result.error)
-        }
-      }
+      // If we get here, the action succeeded
+      router.push('/dashboard')
+      console.log('Action completed successfully')
       
     } catch (error: unknown) {
       console.groupCollapsed('Error Details')
