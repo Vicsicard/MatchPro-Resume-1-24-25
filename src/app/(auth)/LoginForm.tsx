@@ -34,7 +34,9 @@ export function LoginForm() {
       console.log('Action completed successfully:', result)
       
       if (result?.success && result.redirect) {
-        window.location.href = result.redirect
+        // Construct full URL from redirect path
+        const redirectUrl = new URL(result.redirect, window.location.origin)
+        window.location.href = redirectUrl.toString()
       } else if (result?.error) {
         setFormError(result.error)
       }
