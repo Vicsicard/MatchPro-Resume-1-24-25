@@ -1,7 +1,6 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
-import { redirect } from 'next/navigation'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
 
@@ -72,7 +71,7 @@ export async function signIn(formData: FormData) {
   const { success } = await ratelimit.limit(email)
   if (!success) {
     console.warn(`Rate limit exceeded for email: ${email}`)
-    return redirect('/login?error=Too many attempts. Please try again later.')
+    return JSON.stringify({ success: false, error: 'Too many attempts. Please try again later.' })
   }
 
   const supabase = createClient()
@@ -97,14 +96,14 @@ export async function signIn(formData: FormData) {
         errorMessage = 'Please confirm your email before signing in'
       }
 
-      return redirect(`/login?error=${encodeURIComponent(errorMessage)}`)
+      return JSON.stringify({ success: false, error: errorMessage })
     }
 
     console.log('Successful sign in:', { email, userId: data.user?.id })
-    return redirect('/account')
+    return JSON.stringify({ success: true, redirect: '/account' })
   } catch (error) {
     console.error('Unexpected sign in error:', error)
-    return redirect('/login?error=An unexpected error occurred. Please try again.')
+    return JSON.stringify({ success: false, error: 'An unexpected error occurred. Please try again.' })
   }
 }
 
@@ -116,7 +115,7 @@ export async function signUp(formData: FormData) {
   const { success } = await ratelimit.limit(email)
   if (!success) {
     console.warn(`Rate limit exceeded for email: ${email}`)
-    return redirect('/login?error=Too many attempts. Please try again later.')
+    return JSON.stringify({ success: false, error: 'Too many attempts. Please try again later.' })
   }
 
   const supabase = createClient()
@@ -144,13 +143,13 @@ export async function signUp(formData: FormData) {
         errorMessage = 'Password must be at least 6 characters'
       }
 
-      return redirect(`/login?error=${encodeURIComponent(errorMessage)}`)
+      return JSON.stringify({ success: false, error: errorMessage })
     }
 
     console.log('Successful sign up:', { email, userId: data.user?.id })
-    return redirect('/login?message=Check your email to continue the sign in process')
+    return JSON.stringify({ success: true, redirect: '/login?message=Check your email to continue the sign in process' })
   } catch (error) {
     console.error('Unexpected sign up error:', error)
-    return redirect('/login?error=An unexpected error occurred. Please try again.')
+    return JSON.stringify({ success: false, error: 'An unexpected error occurred. Please try again.' })
   }
 }

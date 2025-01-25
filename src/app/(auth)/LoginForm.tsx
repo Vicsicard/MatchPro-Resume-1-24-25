@@ -30,8 +30,14 @@ export function LoginForm() {
       console.debug('Form data collected:', Object.fromEntries(formData.entries()))
 
       console.log(`Starting ${action.name} action...`)
-      const result = await action(formData)
+      const result = await action(formData) as { success?: boolean; redirect?: string; error?: string }
       console.log('Action completed successfully:', result)
+      
+      if (result?.success && result.redirect) {
+        window.location.href = result.redirect
+      } else if (result?.error) {
+        setFormError(result.error)
+      }
       
     } catch (error: unknown) {
       console.groupCollapsed('Error Details')
