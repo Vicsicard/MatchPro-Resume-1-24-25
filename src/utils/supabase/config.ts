@@ -9,9 +9,9 @@ export const SUPABASE_AUTH_CONFIG = {
   cookies: {
     name: 'sb-auth-token',
     lifetime: 60 * 60 * 24 * 7, // 7 days
-    domain: 'localhost',
+    domain: process.env.NODE_ENV === 'production' ? new URL(SITE_URL).hostname : 'localhost',
     path: '/',
     sameSite: 'lax',
-    secure: true,
+    secure: process.env.NODE_ENV === 'production',
   },
 }
