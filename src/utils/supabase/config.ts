@@ -1,4 +1,4 @@
-export const SITE_URL = process.env.NEXT_SITE_URL || 'https://localhost:3217'
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
 export const SUPABASE_AUTH_CONFIG = {
   redirectTo: `${SITE_URL}/auth/callback`,

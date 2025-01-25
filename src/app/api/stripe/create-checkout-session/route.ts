@@ -172,8 +172,8 @@ export async function POST(request: Request) {
             },
           ],
           mode: 'subscription',
-          success_url: `${process.env.NEXT_SITE_URL}pricing`,
-          cancel_url: `${process.env.NEXT_SITE_URL}`,
+          success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/pricing`,
+          cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}`,
         })
       )
     )

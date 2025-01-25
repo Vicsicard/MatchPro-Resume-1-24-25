@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   
   try {
     // Validate environment variables
-    if (!process.env.NEXT_SITE_URL) {
+    if (!process.env.NEXT_PUBLIC_SITE_URL) {
       return NextResponse.json(
         { 
           success: false,
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     }
 
     // Ensure proper URL formatting
-    const baseUrl = process.env.NEXT_SITE_URL.replace(/\/$/, '')
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '')
     const redirectUrl = `${baseUrl}/auth/confirm`
 
     const { data, error } = await supabase.auth.signUp({

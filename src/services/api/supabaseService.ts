@@ -73,7 +73,7 @@ export const useSupabaseService = () => {
       await supabase.auth.signInWithOAuth({
         provider: 'linkedin_oidc',
         options: {
-          redirectTo: `${process.env.NEXT_SITE_URL}auth/callback`,
+          redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
         },
       })
     } catch (error: unknown) {
@@ -132,7 +132,7 @@ export const useSupabaseService = () => {
             last_name,
             name: first_name && last_name ? `${first_name} ${last_name}` : undefined,
           },
-          emailRedirectTo: `${process.env.NEXT_SITE_URL}auth/callback`
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`
         }
       })
 
