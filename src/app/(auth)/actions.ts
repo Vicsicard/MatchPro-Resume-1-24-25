@@ -77,6 +77,7 @@ export async function signIn(formData: FormData) {
   const supabase = createClient()
 
   try {
+    console.log('Attempting sign in with:', { email })
     const { error, data } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -86,7 +87,9 @@ export async function signIn(formData: FormData) {
       console.error('Sign in error:', {
         email,
         error: error.message,
-        status: error.status
+        status: error.status,
+        stack: error.stack,
+        cause: error.cause
       })
       
       let errorMessage = 'Could not authenticate user'
