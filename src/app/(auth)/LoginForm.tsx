@@ -1,18 +1,41 @@
 'use client'
 
 import { signIn, signUp } from './actions'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const lastRequestTime = useRef<number>(0)
+  const requestCount = useRef<number>(0)
+  const router = useRouter()
+
+  // Rate limiting configuration
+  const RATE_LIMIT = {
+    maxRequests: 5, // Max requests per time window
+    timeWindow: 10000 // 10 seconds
+  }
 
   const handleSubmit = async (action: typeof signIn | typeof signUp, event: React.MouseEvent) => {
     console.group('LoginForm Submission')
     try {
       event.preventDefault()
       console.debug('Event prevented default behavior')
-      
+
+      // Rate limiting check
+      const now = Date.now()
+      if (now - lastRequestTime.current < RATE_LIMIT.timeWindow) {
+        if (requestCount.current >= RATE_LIMIT.maxRequests) {
+          setFormError('Too many requests. Please wait a moment and try again.')
+          return
+        }
+        requestCount.current++
+      } else {
+        requestCount.current = 1
+        lastRequestTime.current = now
+      }
+
       setIsLoading(true)
       setFormError(null)
       console.debug('Loading state set to true')
@@ -30,15 +53,25 @@ export function LoginForm() {
       console.debug('Form data collected:', Object.fromEntries(formData.entries()))
 
       console.log(`Starting ${action.name} action...`)
-      const result = await action(formData) as { success?: boolean; redirect?: string; error?: string }
+      const result = await action(formData) as { 
+        success?: boolean; 
+        redirect?: string; 
+        error?: string;
+        status?: number;
+      }
       console.log('Action completed successfully:', result)
       
       if (result?.success && result.redirect) {
-        // Construct full URL from redirect path
-        const redirectUrl = new URL(result.redirect, window.location.origin)
-        window.location.href = redirectUrl.toString()
+        router.push(result.redirect)
       } else if (result?.error) {
-        setFormError(result.error)
+        // Handle specific error cases
+        if (result.status === 429) {
+          setFormError('Too many requests. Please wait a moment and try again.')
+        } else if (result.status === 500) {
+          setFormError('Server error. Please try again later.')
+        } else {
+          setFormError(result.error)
+        }
       }
       
     } catch (error: unknown) {

@@ -7,6 +7,7 @@ import { Redis } from '@upstash/redis'
 // Simple in-memory store implementation
 class MemoryStore {
   private store: Map<string, number> = new Map()
+  private valueStore: Map<string, string> = new Map()
 
   async incr(key: string): Promise<number> {
     const current = this.store.get(key) || 0
@@ -26,9 +27,8 @@ class MemoryStore {
 
   async reset(key: string): Promise<void> {
     this.store.delete(key)
+    this.valueStore.delete(key)
   }
-
-  private valueStore: Map<string, string> = new Map()
 
   async set<TData>(key: string, value: TData): Promise<TData | "OK" | null> {
     if (typeof value === 'number') {
@@ -142,10 +142,9 @@ export async function signUp(formData: FormData) {
       NODE_ENV: process.env.NODE_ENV
     })
 
-    const redirectUrl = `${process.env.NEXT_SITE_URL}/auth/callback`
-    if (!redirectUrl.startsWith('http')) {
-      throw new Error(`Invalid redirect URL: ${redirectUrl}`)
-    }
+    const baseUrl = process.env.NEXT_SITE_URL
+    const redirectUrl = `${baseUrl?.startsWith('http') ? '' : 'https://'}${baseUrl}/auth/callback`
+    console.log('Using redirect URL:', redirectUrl)
 
     const { error, data } = await supabase.auth.signUp({
       email,
