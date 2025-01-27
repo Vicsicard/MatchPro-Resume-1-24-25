@@ -40,20 +40,20 @@ export default function PricingPlans({ prices }: PricingPlansProps) {
     } 
   }, [])
 
-  const handleSubscribe = async (priceId: string) => {
-    try {
-      setLoading(true)
-      setError(null)
+    const handleSubscribe = async (lookup_key: string) => {
+      try {
+        setLoading(true)
+        setError(null)
 
-      const response = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          priceId,
-        }),
-      })
+        const response = await fetch('/api/create-checkout-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            lookup_key,
+          }),
+        })
 
       const data = await response.json()
       if (!response.ok) throw new Error(data.error)
